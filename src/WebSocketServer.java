@@ -4,8 +4,14 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-@ServerEndpoint("/hello")
+@ServerEndpoint(
+        value = "/chat",
+        encoders = {MessageEncoder.class},
+        decoders = {MessageDecoder.class}
+        )
 public class WebSocketServer {
 
     private static final Set<Session> sessions = Collections.synchronizedSet(new HashSet<Session>());
@@ -17,12 +23,15 @@ public class WebSocketServer {
     }
 
     @OnMessage
-    public void onMessage(String message) {
+    public void onMessage(Message message) {
         for (Session openSession : sessions) {
             try {
-                openSession.getBasicRemote().sendText("I got your message");
-            } catch (IOException e) {
-                e.printStackTrace();
+                System.out.println(message.toString());
+//                openSession.getBasicRemote().sendText("I got your message");
+                message.setMessage("Response to " + message.getMessage());
+                openSession.getBasicRemote().sendObject(message);
+            } catch (IOException | EncodeException ex) {
+                Logger.getLogger(WebSocketServer.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
